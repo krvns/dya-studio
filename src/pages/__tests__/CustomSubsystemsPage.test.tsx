@@ -133,12 +133,12 @@ describe("CustomSubsystemsPage", () => {
       expect(screen.getByText("https://example.com/ui")).toBeInTheDocument();
     });
 
-    it("should render multiple UI URLs for a subsystem", () => {
+    it("should not render unsafe UI URLs and show fallback if none valid", () => {
       const subsystems = createMockSubsystems([
         {
           index: 0,
           identifier: "zmk__custom",
-          uiUrl: ["https://example.com/ui", "https://another.example.com/app"],
+          uiUrl: ["javascript:alert(1)", "data:text/html,bad"],
         },
       ]);
       renderComponent({
@@ -151,9 +151,33 @@ describe("CustomSubsystemsPage", () => {
         },
       });
 
-      expect(screen.getByText("https://example.com/ui")).toBeInTheDocument();
+      expect(screen.queryByText("javascript:alert(1)")).not.toBeInTheDocument();
       expect(
-        screen.getByText("https://another.example.com/app"),
+        screen.getByText("No web UI available for this subsystem."),
+      ).toBeInTheDocument();
+    });
+
+    it("should filter out unsafe UI URLs and render only safe ones", () => {
+      const subsystems = createMockSubsystems([
+        {
+          index: 0,
+          identifier: "zmk__custom",
+          uiUrl: ["javascript:alert(1)", "https://example.com/safe-ui"],
+        },
+      ]);
+      renderComponent({
+        state: {
+          connection: null,
+          deviceInfo: null,
+          customSubsystems: subsystems,
+          isLoading: false,
+          error: null,
+        },
+      });
+
+      expect(screen.queryByText("javascript:alert(1)")).not.toBeInTheDocument();
+      expect(
+        screen.getByText("https://example.com/safe-ui"),
       ).toBeInTheDocument();
     });
   });

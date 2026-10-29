@@ -44,10 +44,7 @@ export default defineConfig(({ mode }) => {
         },
       }),
       svgr(),
-      htmlEnvVarReplacePlugin({
-        VITE_GOOGLE_ANALYTICS_ID:
-          env.VITE_GOOGLE_ANALYTICS_ID || "G-32NGG9Y4BQ",
-      }),
+      htmlEnvVarReplacePlugin({}),
     ],
   };
 });

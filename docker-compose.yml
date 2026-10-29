@@ -1,0 +1,12 @@
+services:
+  dya-studio:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: dya-studio:latest
+    container_name: dya-studio
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    security_opt:
+      - no-new-privileges:true

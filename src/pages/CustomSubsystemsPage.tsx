@@ -153,6 +153,9 @@ async function migrateLegacyTrustedUrls(): Promise<void> {
 }
 
 async function isUrlApproved(url: string): Promise<boolean> {
+  if (!isValidUrl(url)) {
+    return false;
+  }
   try {
     await migrateLegacyTrustedUrls();
     return getApprovedUrlDigests().has(await digestUrl(url));
@@ -164,6 +167,9 @@ async function isUrlApproved(url: string): Promise<boolean> {
 }
 
 async function saveUrlApproval(url: string): Promise<void> {
+  if (!isValidUrl(url)) {
+    return;
+  }
   try {
     await migrateLegacyTrustedUrls();
     const approvedDigests = getApprovedUrlDigests();
@@ -388,30 +394,33 @@ function SubsystemCard({ subsystem, onLinkClick }: SubsystemCardProps) {
         </div>
       </div>
 
-      {subsystem.uiUrl.length > 0 ? (
-        <div className="mt-3 space-y-2">
-          <p className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide">
-            {t("Web UI")}
+      {(() => {
+        const validUrls = subsystem.uiUrl.filter(isValidUrl);
+        return validUrls.length > 0 ? (
+          <div className="mt-3 space-y-2">
+            <p className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide">
+              {t("Web UI")}
+            </p>
+            {validUrls.map((url, urlIndex) => (
+              <button
+                key={urlIndex}
+                className="flex items-center gap-2 text-sm text-[var(--color-electric)] hover:text-[var(--color-neon)] transition-colors group w-full text-left"
+                onClick={() => void onLinkClick(url)}
+              >
+                <IconExternalLink
+                  size={14}
+                  className="flex-shrink-0 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform"
+                />
+                <span className="underline break-all">{url}</span>
+              </button>
+            ))}
+          </div>
+        ) : (
+          <p className="text-xs text-[var(--color-text-muted)] mt-2">
+            {t("No web UI available for this subsystem.")}
           </p>
-          {subsystem.uiUrl.map((url, urlIndex) => (
-            <button
-              key={urlIndex}
-              className="flex items-center gap-2 text-sm text-[var(--color-electric)] hover:text-[var(--color-neon)] transition-colors group w-full text-left"
-              onClick={() => void onLinkClick(url)}
-            >
-              <IconExternalLink
-                size={14}
-                className="flex-shrink-0 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform"
-              />
-              <span className="underline break-all">{url}</span>
-            </button>
-          ))}
-        </div>
-      ) : (
-        <p className="text-xs text-[var(--color-text-muted)] mt-2">
-          {t("No web UI available for this subsystem.")}
-        </p>
-      )}
+        );
+      })()}
     </div>
   );
 }
@@ -431,11 +440,17 @@ export function CustomSubsystemsPage() {
   );
 
   const navigate = (url: string) => {
+    if (!isValidUrl(url)) {
+      return;
+    }
     zmkApp?.disconnect();
     navigateTo(url);
   };
 
   const handleLinkClick = async (url: string) => {
+    if (!isValidUrl(url)) {
+      return;
+    }
     if (await isUrlApproved(url)) {
       navigate(url);
     } else {
@@ -446,7 +461,7 @@ export function CustomSubsystemsPage() {
   const handleConfirm = async (dontShowAgain: boolean) => {
     const url = pendingUrl;
     setPendingUrl(null);
-    if (url) {
+    if (url && isValidUrl(url)) {
       if (dontShowAgain) {
         await saveUrlApproval(url);
       }
